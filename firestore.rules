@@ -1,0 +1,87 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(uid) {
+      return request.auth.uid == uid;
+    }
+    
+    function isDocumentOwner(docId) {
+      return resource.data.ownerId == request.auth.uid;
+    }
+    
+    function isCollaborator(docId) {
+      return request.auth.uid in resource.data.memberIds;
+    }
+    
+    function isEditor(docId) {
+      return resource.data.ownerId == request.auth.uid ||
+             resource.data.collaborators[request.auth.uid].role in ['editor', 'owner'];
+    }
+    
+    function isViewerOrHigher(docId) {
+      return resource.data.ownerId == request.auth.uid ||
+             request.auth.uid in resource.data.memberIds;
+    }
+
+    // ========================================
+    // USERS Collection Rules
+    // ========================================
+    match /users/{uid} {
+      // Users can only read/write their own profile
+      allow read: if isAuthenticated() && isOwner(uid);
+      allow write: if isAuthenticated() && isOwner(uid);
+      allow create: if isAuthenticated() && isOwner(uid);
+      
+      // Allow backend (service account) to verify users
+      allow read: if request.auth.token.firebase.sign_in_provider == 'service_account';
+      allow write: if request.auth.token.firebase.sign_in_provider == 'service_account';
+    }
+
+    // ========================================
+    // DOCUMENTS Collection Rules
+    // ========================================
+    match /documents/{docId} {
+      // Owner can do anything
+      allow create: if isAuthenticated() && 
+                       request.resource.data.ownerId == request.auth.uid;
+      
+      allow read: if isAuthenticated() && isViewerOrHigher(docId);
+      
+      allow update: if isAuthenticated() && 
+                       (isDocumentOwner(docId) || 
+                        isEditor(docId));
+      
+      allow delete: if isAuthenticated() && isDocumentOwner(docId);
+
+      // ========================================
+      // VERSIONS Subcollection Rules
+      // ========================================
+      match /versions/{versionId} {
+        // Collaborators can read versions
+        allow read: if isAuthenticated() && isViewerOrHigher(/databases/{database}/documents/documents/{docId});
+        
+        // Only owner and editors can create versions
+        allow create: if isAuthenticated() && 
+                         (isDocumentOwner(/databases/{database}/documents/documents/{docId}) ||
+                          isEditor(/databases/{database}/documents/documents/{docId}));
+        
+        // Versions are immutable (no updates/deletes except by owner)
+        allow delete: if isAuthenticated() && 
+                         isDocumentOwner(/databases/{database}/documents/documents/{docId});
+      }
+    }
+
+    // ========================================
+    // DENY ALL OTHER RULES
+    // ========================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
