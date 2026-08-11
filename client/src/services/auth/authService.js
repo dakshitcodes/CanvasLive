@@ -32,7 +32,7 @@ function loadDevUser() {
 }
 
 export const authService = {
-  isDevMode: () => env.authDevMode || !isFirebaseConfigured() || !auth,
+  isDevMode: () => env.authDevMode,
 
   async login(email, password) {
     if (this.isDevMode()) {

@@ -4,7 +4,7 @@ dotenv.config();
 
 const config = {
   env: process.env.NODE_ENV || 'development',
-  port: parseInt(process.env.PORT, 10) || 5000,
+  port: parseInt(process.env.PORT, 10) || 5001,
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   authDevMode: process.env.AUTH_DEV_MODE === 'true',
   firebase: {

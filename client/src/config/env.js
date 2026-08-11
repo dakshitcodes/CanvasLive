@@ -4,9 +4,12 @@
  */
 
 export const env = {
-  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1',
-  socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:5000',
-  authDevMode: import.meta.env.VITE_AUTH_DEV_MODE === 'true',
+  apiUrl: import.meta.env.VITE_API_URL || 'http://localhost:5001/api/v1',
+  socketUrl: import.meta.env.VITE_SOCKET_URL || 'http://localhost:5001',
+  // Development authentication is deliberately unavailable in builds. This
+  // prevents a production deployment from silently falling back to mock users
+  // when its Firebase variables have not been configured.
+  authDevMode: import.meta.env.DEV && import.meta.env.VITE_AUTH_DEV_MODE === 'true',
   firebase: {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
     authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,

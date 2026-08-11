@@ -9,7 +9,7 @@ import { SOCKET_EVENTS } from '../constants/socketEvents.js';
 export function initializeSocket(httpServer) {
   const io = new Server(httpServer, {
     cors: {
-      origin: config.clientUrl,
+      origin: config.env === 'development' ? true : config.clientUrl,
       methods: ['GET', 'POST'],
       credentials: true,
     },
