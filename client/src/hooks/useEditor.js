@@ -16,12 +16,13 @@ export function useEditor(documentId) {
 
   const isRemoteUpdate = useRef(false);
   const [localContent, setLocalContent] = useState('');
-  const debouncedContent = useDebounce(localContent, 800);
+  const debouncedContent = useDebounce(localContent, 500);
 
   const loadDocument = useCallback(async () => {
     if (!documentId) return;
 
     setLoading(true);
+    setError(null);
 
     try {
       const res = await documentApi.get(documentId);
@@ -31,6 +32,7 @@ export function useEditor(documentId) {
 
       setDocument(loadedDocument);
       setLocalContent(content);
+      setSaveStatus('saved');
     } catch (err) {
       setError(err.message);
     } finally {
@@ -122,12 +124,14 @@ export function useEditor(documentId) {
 
     setSaveStatus('saving');
 
+    // Broadcast latest content to other connected clients.
     socketService.sendUpdate(
       documentId,
       debouncedContent,
       document.title
     );
 
+    // Persist latest content to Firestore.
     socketService.saveDocument(
       documentId,
       debouncedContent
@@ -151,6 +155,14 @@ export function useEditor(documentId) {
 
   const handleBlur = () => {
     socketService.stopTyping(documentId);
+
+    if (!documentId || !document) return;
+    if (!canEdit(document.role)) return;
+    if (!localContent) return;
+
+    // Make sure the latest editor content is persisted.
+    socketService.saveDocument(documentId, localContent);
+    setSaveStatus('saving');
   };
 
   const loadVersions = async () => {
@@ -161,8 +173,11 @@ export function useEditor(documentId) {
   const restoreVersion = async (versionId) => {
     const res = await documentApi.restoreVersion(documentId, versionId);
 
-    setDocument(res.data);
-    setLocalContent(res.data.content || '');
+    const restoredDocument = res.data;
+    const content = restoredDocument.content || '<p></p>';
+
+    setDocument(restoredDocument);
+    setLocalContent(content);
     setSaveStatus('saved');
 
     await loadVersions();
