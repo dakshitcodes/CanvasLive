@@ -50,7 +50,7 @@ The application uses a React frontend with a Node.js/Express backend. Real-time 
 
 Documents support version history, allowing users to view previous versions and restore a selected version.
 
-![alt text](image.png)
+![CanvasLive Version History](https://github.com/dakshitcodes/CanvasLive/blob/main/image.png)
 
 ---
 
