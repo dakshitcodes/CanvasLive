@@ -63,7 +63,7 @@ export function registerDocumentHandlers(io, socket) {
       return socket.emit(SOCKET_EVENTS.ERROR, { message: 'Viewer cannot edit' });
     }
 
-    documentService.applyContent(documentId, user.uid, content);
+    // documentService.applyContent(documentId, user.uid, content);
     socket.to(`doc:${documentId}`).emit(SOCKET_EVENTS.DOC_UPDATED, {
       documentId,
       content,
