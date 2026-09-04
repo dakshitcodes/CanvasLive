@@ -1,19 +1,56 @@
 # CanvasLive
 
-CanvasLive is a real-time collaborative document editor built for teams that need to create, edit, and share rich-text documents together. It combines a React workspace with an Express and Socket.IO service for responsive collaboration, live presence, typing indicators, and version history.
+> Real-time collaborative document editor with multi-user editing, role-based access control, authentication, and persistent document storage.
 
----
+## Overview
 
-## Purpose
+CanvasLive is a full-stack collaborative document editing platform that allows multiple users to work on documents in real time.
 
-Traditional document workflows make collaboration slow: contributors work in separate copies, changes are difficult to track, and permissions are often unclear. **CanvasLive** provides a shared workspace where authenticated users can create documents, invite collaborators, and work together in real time.
+The application uses a React frontend with a Node.js/Express backend. Real-time communication is handled using Socket.IO, while Firebase is used for authentication and persistent document storage.
 
-The project also demonstrates:
+## Features
 
-- Building a full-stack React and Node.js application with a clear client/server boundary.
-- Synchronizing document changes, presence, typing state, and cursors through Socket.IO rooms.
-- Enforcing owner, editor, and viewer permissions across REST and real-time operations.
-- Preparing a Firebase-backed authentication and Firestore persistence layer for production use.
+### Document Management
+
+- Create documents
+- Edit document content
+- Rename documents
+- Delete documents
+- Persistent document storage
+- Version history
+- Restore previous document versions
+
+### Real-Time Collaboration
+
+- Multiple users can edit a document simultaneously
+- Real-time document updates using Socket.IO
+- Document-specific Socket.IO rooms
+- Online user presence
+- Typing indicators
+- Debounced document saving
+- Automatic persistence of document changes
+
+### Role-Based Access Control
+
+| Role       | View | Edit | Delete | Manage Collaborators |
+| :--------- | :--: | :--: | :----: | :------------------: |
+| **Owner**  |  ✅  |  ✅  |   ✅   |          ✅          |
+| **Editor** |  ✅  |  ✅  |   ❌   |          ❌          |
+| **Viewer** |  ✅  |  ❌  |   ❌   |          ❌          |
+
+### Authentication
+
+- Firebase Authentication
+- Firebase Admin SDK for server-side authentication
+- Protected API routes
+- Authenticated Socket.IO connections
+- Document-level access control
+
+### Version History
+
+Documents support version history, allowing users to view previous versions and restore a selected version.
+
+![alt text](image.png)
 
 ---
 
@@ -21,16 +58,16 @@ The project also demonstrates:
 
 <p align="center">
   <a href="https://react.dev/">
-    <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React" />
+    <img src="https://img.shields.io/badge/React_19-20232A?style=for-the-badge&logo=react&logoColor=61DAFB" alt="React 19" />
   </a>
   <a href="https://vite.dev/">
     <img src="https://img.shields.io/badge/Vite-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
   </a>
   <a href="https://expressjs.com/">
-    <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express" />
+    <img src="https://img.shields.io/badge/Express.js-000000?style=for-the-badge&logo=express&logoColor=white" alt="Express.js" />
   </a>
   <a href="https://socket.io/">
-    <img src="https://img.shields.io/badge/Socket.IO_4-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="Socket.IO" />
+    <img src="https://img.shields.io/badge/Socket.IO-010101?style=for-the-badge&logo=socketdotio&logoColor=white" alt="Socket.IO" />
   </a>
   <a href="https://firebase.google.com/">
     <img src="https://img.shields.io/badge/Firebase-FFCA28?style=for-the-badge&logo=firebase&logoColor=black" alt="Firebase" />
@@ -40,162 +77,357 @@ The project also demonstrates:
   </a>
 </p>
 
-### Technologies Used
-
-| Technology | Role in application |
-| :-- | :-- |
-| **React 19 + Vite** | Provides the fast, component-based client workspace and development environment. |
-| **TipTap** | Powers the rich-text editing experience, including links, text alignment, underline, and placeholders. |
-| **Express** | Exposes the authenticated REST API for document, collaborator, and version-management actions. |
-| **Socket.IO** | Synchronizes document updates, presence, typing, cursor activity, and save events in real time. |
-| **Firebase / Firebase Admin** | Supplies the production authentication and Firestore integration foundation. |
-| **Tailwind CSS** | Provides the responsive, utility-first styling system. |
+| Technology                  | Purpose                                           |
+| :-------------------------- | :------------------------------------------------ |
+| **React 19**                | Component-based frontend UI                       |
+| **Vite**                    | Frontend development and production build tooling |
+| **TipTap**                  | Rich-text document editor                         |
+| **Tailwind CSS**            | Responsive utility-first styling                  |
+| **Express.js**              | REST API backend                                  |
+| **Node.js**                 | Backend runtime                                   |
+| **Socket.IO**               | Real-time collaboration and presence              |
+| **Firebase Authentication** | User authentication                               |
+| **Firebase Admin SDK**      | Server-side authentication and Firebase access    |
+| **Cloud Firestore**         | Persistent document and version storage           |
+| **Axios**                   | HTTP client for API communication                 |
+| **Lucide React**            | UI icons                                          |
+| **Vercel**                  | Frontend hosting                                  |
+| **Render**                  | Backend hosting                                   |
+| **Git / GitHub**            | Version control and source management             |
 
 ---
 
-## Detailed Architecture
+## Architecture
 
-CanvasLive separates the browser experience, API layer, and real-time collaboration layer so document operations can remain secure while live updates reach connected collaborators immediately.
+```text
+                        ┌──────────────────────┐
+                        │    React Frontend    │
+                        │     React + TipTap   │
+                        └──────────┬───────────┘
+                                   │
+                    ┌──────────────┴──────────────┐
+                    │                             │
+                REST API                    Socket.IO
+                    │                             │
+                    ▼                             ▼
+            ┌────────────────────────────────────────────┐
+            │             Express Backend                │
+            │                                            │
+            │   REST API + Socket.IO Collaboration Layer │
+            └──────────────────────┬─────────────────────┘
+                                   │
+                                   ▼
+                            ┌──────────────────┐
+                            │ Cloud Firestore  │
+                            │                  │
+                            │   Documents      │
+                            │   Versions       │
+                            └──────────────────┘
 
-```mermaid
-graph TD
-    subgraph Client["Client (React + Vite)"]
-        UI["Dashboard and editor UI"]
-        Editor["TipTap rich-text editor"]
-        ClientSocket["Socket.IO client"]
-        FirebaseWeb["Firebase Web SDK"]
-    end
-
-    subgraph Server["Server (Express + Socket.IO)"]
-        API["Authenticated REST API"]
-        Realtime["Document and presence rooms"]
-        FirebaseAdmin["Firebase Admin SDK"]
-    end
-
-    subgraph Firebase["Firebase services"]
-        Auth["Firebase Authentication"]
-        Firestore[("Firestore documents")]
-    end
-
-    UI <--> Editor
-    UI --> API
-    Editor <--> ClientSocket
-    ClientSocket <--> Realtime
-    API <--> FirebaseAdmin
-    Realtime <--> FirebaseAdmin
-    FirebaseWeb <--> Auth
-    FirebaseAdmin <--> Auth
-    FirebaseAdmin <--> Firestore
+                           Firebase Authentication
+                                    │
+                                    ▼
+                             User Authentication
 ```
 
-### Data and collaboration flow
+## Real-Time Editing Flow
 
-1. **Authentication:** The client signs users in with Firebase Authentication. In development, `AUTH_DEV_MODE` can bypass Firebase token verification.
-2. **Document access:** The client calls the Express API to list, create, retrieve, rename, update, archive, or delete documents. The server checks the caller's document role before completing an operation.
-3. **Live editing:** When a user joins a document, their socket enters a `doc:<documentId>` room. Editor updates are broadcast to the other members of that room.
-4. **Presence and activity:** The server synchronizes collaborators' online state, typing status, and cursor information with every connected room member.
-5. **Versioning:** Saving content creates a versioned document state that can be viewed and restored by authorized collaborators.
+```text
+User edits document
+        │
+        ▼
+      TipTap
+        │
+        ▼
+    Socket.IO
+        │
+        ├──────────────► Other collaborators
+        │
+        ▼
+ Debounced document save
+        │
+        ▼
+     DOC_SAVE
+        │
+        ▼
+ Document Service
+        │
+        ▼
+    Firestore
+```
 
----
+Real-time updates and persistence are handled separately:
 
-## Document Data Model
+```text
+DOC_UPDATE
+    │
+    └──► Broadcast update to connected collaborators
 
-Documents are structured around ownership, access control, and version history. The model is designed to map directly to Firestore when Firebase persistence is configured.
 
-### `Documents`
-
-| Field | Type | Description |
-| :-- | :-- | :-- |
-| `id` | String | Unique document identifier. |
-| `title` | String | User-facing document title. |
-| `content` | HTML String | Rich-text document content. |
-| `ownerId` | String | Firebase user ID of the document owner. |
-| `collaborators` | Array | Users granted editor or viewer access. |
-| `memberIds` | String Array | Owner and collaborator IDs used for document access. |
-| `role` | String | Current user's resolved collaboration role. |
-| `isArchived` | Boolean | Whether the document is archived. |
-| `version` | Number | Current document version number. |
-| `createdAt` / `updatedAt` | ISO Date String | Document creation and last-update timestamps. |
-| `lastEditedBy` | String | User ID of the most recent editor. |
-
-### `Version snapshots`
-
-| Field | Type | Description |
-| :-- | :-- | :-- |
-| `id` | String | Unique snapshot identifier. |
-| `documentId` | String | Parent document identifier. |
-| `version` | Number | Version number captured by the snapshot. |
-| `title` / `content` | String | Document state saved at that version. |
-| `editedBy` | String | User who created the snapshot. |
-| `createdAt` | ISO Date String | Snapshot creation time. |
+DOC_SAVE
+    │
+    └──► Persist document content in Firestore
+```
 
 ---
 
-## Prerequisites
+## Project Structure
 
-Before starting CanvasLive, install:
-
-- **Node.js** `18` or newer.
-- **npm** `9` or newer.
-- **Firebase project** (optional for local development; required for production authentication and persistence).
-- **Git** for cloning and source control.
+```text
+CanvasLive/
+├── client/
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── common/
+│   │   │   ├── dashboard/
+│   │   │   └── editor/
+│   │   ├── config/
+│   │   ├── context/
+│   │   ├── hooks/
+│   │   ├── pages/
+│   │   └── services/
+│   │       ├── api/
+│   │       └── socket/
+│   └── package.json
+│
+├── server/
+│   ├── src/
+│   │   ├── config/
+│   │   ├── controllers/
+│   │   ├── middleware/
+│   │   ├── routes/
+│   │   ├── services/
+│   │   ├── sockets/
+│   │   ├── utils/
+│   │   ├── app.js
+│   │   └── server.js
+│   └── package.json
+│
+├── vercel.json
+├── package.json
+└── README.md
+```
 
 ---
 
-## Getting Started
+## API
 
-### 1. Configure environment variables
+### Health
 
-Copy the example files before adding your Firebase credentials:
+| Method | Endpoint         | Description      |
+| :----- | :--------------- | :--------------- |
+| `GET`  | `/api/v1/health` | API health check |
+
+### Documents
+
+| Method   | Endpoint                       | Description                                       |
+| :------- | :----------------------------- | :------------------------------------------------ |
+| `GET`    | `/api/v1/documents`            | Get documents available to the authenticated user |
+| `GET`    | `/api/v1/documents/:id`        | Get a specific document                           |
+| `POST`   | `/api/v1/documents`            | Create a document                                 |
+| `PUT`    | `/api/v1/documents/:id`        | Update document content                           |
+| `PATCH`  | `/api/v1/documents/:id/rename` | Rename a document                                 |
+| `DELETE` | `/api/v1/documents/:id`        | Delete a document                                 |
+
+### Collaborators
+
+| Method   | Endpoint                                              | Description           |
+| :------- | :---------------------------------------------------- | :-------------------- |
+| `POST`   | `/api/v1/documents/:id/collaborators`                 | Add a collaborator    |
+| `DELETE` | `/api/v1/documents/:id/collaborators/:collaboratorId` | Remove a collaborator |
+
+### Versions
+
+| Method | Endpoint                                            | Description                |
+| :----- | :-------------------------------------------------- | :------------------------- |
+| `GET`  | `/api/v1/documents/:id/versions`                    | Get document versions      |
+| `POST` | `/api/v1/documents/:id/versions/:versionId/restore` | Restore a document version |
+
+---
+
+## Socket.IO Events
+
+### Client → Server
+
+| Event             | Description                          |
+| :---------------- | :----------------------------------- |
+| `DOC_JOIN`        | Join a document collaboration room   |
+| `DOC_LEAVE`       | Leave a document collaboration room  |
+| `DOC_UPDATE`      | Send a real-time document update     |
+| `DOC_SAVE`        | Persist the current document content |
+| `TYPING_START`    | Indicate that a user started typing  |
+| `TYPING_STOP`     | Indicate that a user stopped typing  |
+| `PRESENCE_UPDATE` | Update user presence                 |
+
+### Server → Client
+
+| Event             | Description                                |
+| :---------------- | :----------------------------------------- |
+| `DOC_JOINED`      | Confirmation that a user joined a document |
+| `DOC_UPDATED`     | Broadcast document update                  |
+| `DOC_SAVED`       | Document save notification                 |
+| `PRESENCE_UPDATE` | Updated user presence                      |
+| `TYPING_UPDATE`   | Updated typing status                      |
+| `ERROR`           | Socket error notification                  |
+
+### Collaboration Rooms
+
+Each document uses a dedicated Socket.IO room:
+
+```text
+doc:<documentId>
+```
+
+This keeps real-time updates scoped to users collaborating on the same document.
+
+---
+
+## Local Development
+
+### Prerequisites
+
+- Node.js 18+
+- npm
+- Firebase project
+- Firebase Authentication enabled
+- Cloud Firestore enabled
+
+### Clone the Repository
 
 ```bash
-Copy-Item client/.env.example client/.env
-Copy-Item server/.env.example server/.env
+git clone https://github.com/dakshitcodes/CanvasLive.git
+cd CanvasLive
 ```
 
-For local development, keep `VITE_AUTH_DEV_MODE=true` in `client/.env` and `AUTH_DEV_MODE=true` in `server/.env`.
+### Install Dependencies
 
-To use Firebase, populate the client variables in `client/.env` and the server variables in `server/.env`:
+```bash
+npm run install:all
+```
+
+### Server Environment Variables
+
+Create the server environment configuration with:
 
 ```env
-# client/.env
-VITE_API_URL=http://localhost:5000/api/v1
-VITE_SOCKET_URL=http://localhost:5000
-VITE_AUTH_DEV_MODE=false
-VITE_FIREBASE_API_KEY=your-api-key
-VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your-project-id
-
-# server/.env
-PORT=5000
+NODE_ENV=development
+PORT=5001
 CLIENT_URL=http://localhost:5173
 AUTH_DEV_MODE=false
+
 FIREBASE_PROJECT_ID=your-project-id
 FIREBASE_CLIENT_EMAIL=your-service-account-email
-FIREBASE_PRIVATE_KEY=your-service-account-private-key
+FIREBASE_PRIVATE_KEY="your-private-key"
 ```
 
-See [FIREBASE_SETUP.md](FIREBASE_SETUP.md) for the complete Firebase setup process.
+### Client Environment Variables
 
-### 2. Install and run
+```env
+VITE_API_URL=http://localhost:5001/api/v1
+VITE_SOCKET_URL=http://localhost:5001
+```
+
+> Never commit environment files or Firebase service-account credentials to the repository.
+
+### Run the Application
 
 ```bash
-# Install root, client, and server dependencies
-npm run install:all
-
-# Start the React client and Express/Socket.IO server together
 npm run dev
 ```
 
-Open [http://localhost:5173](http://localhost:5173). The API health endpoint is available at [http://localhost:5000/api/v1/health](http://localhost:5000/api/v1/health).
+The development setup runs:
 
-### Available commands
-
-```bash
-npm run install:all  # Install all workspace dependencies
-npm run dev          # Run client and server concurrently
-npm run dev:client   # Run only the Vite client
-npm run dev:server   # Run only the Express server
-npm run build        # Build the client for production
-npm start            # Start the production server
+```text
+Frontend → http://localhost:5173
+Backend  → http://localhost:5001
 ```
+
+---
+
+## Production
+
+| Component      | Technology              |
+| :------------- | :---------------------- |
+| Frontend       | Vercel                  |
+| Backend        | Render                  |
+| Database       | Cloud Firestore         |
+| Authentication | Firebase Authentication |
+
+Production environment variables are configured through the respective deployment platforms.
+
+---
+
+## Security
+
+CanvasLive includes several application-level security measures:
+
+- Firebase Authentication
+- Firebase Admin SDK token verification
+- Protected API routes
+- Role-based access control
+- Authenticated Socket.IO connections
+- Document-level access control
+- Helmet
+- CORS configuration
+- Request validation using `express-validator`
+- Viewer permissions prevent document modification and saving
+
+---
+
+## Key Engineering Decisions
+
+### Real-Time Updates vs Persistence
+
+Real-time document updates are sent through Socket.IO, while document persistence is handled separately through debounced saves.
+
+This allows collaborators to receive updates immediately without writing every individual keystroke directly to the database.
+
+### Document-Specific Socket.IO Rooms
+
+Each document has its own Socket.IO room:
+
+```text
+doc:<documentId>
+```
+
+This ensures that real-time document events are sent to the relevant collaborators.
+
+### Debounced Autosave
+
+Document changes are saved using a debounced persistence mechanism rather than writing to Firestore for every individual editor interaction.
+
+---
+
+## Deployment
+
+The application is deployed using separate frontend and backend services:
+
+- **Frontend:** Vercel
+- **Backend:** Render
+- **Database:** Cloud Firestore
+- **Authentication:** Firebase Authentication
+
+Firestore indexes are maintained through:
+
+```text
+firestore.indexes.json
+```
+
+---
+
+## Future Improvements
+
+The following features are planned improvements and are **not represented as currently implemented**:
+
+- Improved cursor synchronization
+- Comments and mentions
+- Shareable document links
+- Notifications
+- Offline editing
+- Document search
+- Activity history
+- Advanced conflict resolution
+- Automated testing
+- CI/CD
+
+---
