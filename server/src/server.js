@@ -9,7 +9,7 @@ initializeFirebase();
 const httpServer = http.createServer(app);
 initializeSocket(httpServer);
 
-httpServer.listen(config.port, () => {
+httpServer.listen(config.port, '0.0.0.0', () => {
   console.info(`
   ╔══════════════════════════════════════════════════╗
   ║  RT Collaborative Doc Editor — API Server        ║
