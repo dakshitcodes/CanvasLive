@@ -13,17 +13,24 @@ export function useEditor(documentId) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [versions, setVersions] = useState([]);
+
   const isRemoteUpdate = useRef(false);
   const [localContent, setLocalContent] = useState('');
   const debouncedContent = useDebounce(localContent, 800);
 
   const loadDocument = useCallback(async () => {
     if (!documentId) return;
+
     setLoading(true);
+
     try {
       const res = await documentApi.get(documentId);
-      setDocument(res.data);
-      setLocalContent(res.data.content || '');
+
+      const loadedDocument = res.data;
+      const content = loadedDocument.content || '<p></p>';
+
+      setDocument(loadedDocument);
+      setLocalContent(content);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -41,55 +48,104 @@ export function useEditor(documentId) {
     socketService.joinDocument(documentId);
 
     const onJoined = (payload) => {
-      if (payload.document) setDocument((d) => ({ ...d, ...payload.document }));
+      if (payload.document) {
+        setDocument((current) => ({
+          ...current,
+          ...payload.document,
+        }));
+      }
+
       setCollaborators(payload.collaborators || []);
     };
 
-    const onUpdated = ({ content, updatedBy }) => {
-      if (!content) return;
+    const onUpdated = ({ content }) => {
+      if (content === undefined) return;
+
       isRemoteUpdate.current = true;
+
       setLocalContent(content);
-      setDocument((d) => (d ? { ...d, content } : d));
-      setTimeout(() => { isRemoteUpdate.current = false; }, 50);
+
+      setDocument((current) =>
+        current ? { ...current, content } : current
+      );
+
+      setTimeout(() => {
+        isRemoteUpdate.current = false;
+      }, 50);
     };
 
-    const onPresence = (list) => setCollaborators(list || []);
-    const onTyping = ({ typingUsers: users }) => setTypingUsers(users || []);
-    const onSaved = () => setSaveStatus('saved');
+    const onPresence = (list) => {
+      setCollaborators(list || []);
+    };
+
+    const onTyping = ({ typingUsers: users }) => {
+      setTypingUsers(users || []);
+    };
+
+    const onSaved = ({ documentId: savedDocumentId }) => {
+      if (savedDocumentId === documentId) {
+        setSaveStatus('saved');
+      }
+    };
+
+    const onError = ({ message }) => {
+      console.error('[Socket] Server error:', message);
+      setSaveStatus('error');
+    };
 
     socketService.on(SOCKET_EVENTS.DOC_JOINED, onJoined);
     socketService.on(SOCKET_EVENTS.DOC_UPDATED, onUpdated);
     socketService.on(SOCKET_EVENTS.PRESENCE_SYNC, onPresence);
     socketService.on(SOCKET_EVENTS.TYPING_SYNC, onTyping);
     socketService.on(SOCKET_EVENTS.DOC_SAVED, onSaved);
-    socketService.on(SOCKET_EVENTS.USER_ONLINE, () => {});
-    socketService.on(SOCKET_EVENTS.USER_OFFLINE, () => {});
+    socketService.on(SOCKET_EVENTS.ERROR, onError);
 
     return () => {
       socketService.leaveDocument(documentId);
+
       socketService.off(SOCKET_EVENTS.DOC_JOINED, onJoined);
       socketService.off(SOCKET_EVENTS.DOC_UPDATED, onUpdated);
       socketService.off(SOCKET_EVENTS.PRESENCE_SYNC, onPresence);
       socketService.off(SOCKET_EVENTS.TYPING_SYNC, onTyping);
       socketService.off(SOCKET_EVENTS.DOC_SAVED, onSaved);
+      socketService.off(SOCKET_EVENTS.ERROR, onError);
     };
   }, [documentId, document?.id]);
 
   useEffect(() => {
-    if (!documentId || !document || isRemoteUpdate.current) return;
+    if (!documentId || !document) return;
     if (!canEdit(document.role)) return;
-    if (!debouncedContent || debouncedContent === document.content) return;
+    if (isRemoteUpdate.current) return;
+    if (!debouncedContent) return;
+
+    if (debouncedContent === document.content) return;
 
     setSaveStatus('saving');
-    socketService.sendUpdate(documentId, debouncedContent, document.title);
-    socketService.saveDocument(documentId, debouncedContent);
-  }, [debouncedContent, documentId, document?.content, document?.title, document?.role]);
+
+    socketService.sendUpdate(
+      documentId,
+      debouncedContent,
+      document.title
+    );
+
+    socketService.saveDocument(
+      documentId,
+      debouncedContent
+    );
+  }, [
+    debouncedContent,
+    documentId,
+    document?.content,
+    document?.title,
+    document?.role,
+  ]);
 
   const updateContent = (html) => {
     if (!canEdit(document?.role)) return;
+
     setLocalContent(html);
-    setDocument((d) => (d ? { ...d, content: html } : d));
     setSaveStatus('unsaved');
+
     socketService.startTyping(documentId);
   };
 
@@ -104,8 +160,11 @@ export function useEditor(documentId) {
 
   const restoreVersion = async (versionId) => {
     const res = await documentApi.restoreVersion(documentId, versionId);
+
     setDocument(res.data);
     setLocalContent(res.data.content || '');
+    setSaveStatus('saved');
+
     await loadVersions();
   };
 
