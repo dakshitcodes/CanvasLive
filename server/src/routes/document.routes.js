@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { body } from 'express-validator';
+
 import { authenticate } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
+
 import * as documentController from '../controllers/document.controller.js';
+
 import {
   createDocumentRules,
   updateDocumentRules,
@@ -16,30 +19,84 @@ const router = Router();
 router.use(authenticate);
 
 // Document CRUD operations
-router.get('/', searchQueryRules, validate, documentController.listDocuments);
-router.post('/', createDocumentRules, validate, documentController.createDocument);
-router.get('/:id', documentIdParam, validate, documentController.getDocument);
-router.patch('/:id', updateDocumentRules, validate, documentController.updateDocument);
+
+router.get(
+  '/',
+  searchQueryRules,
+  validate,
+  documentController.listDocuments,
+);
+
+router.post(
+  '/',
+  createDocumentRules,
+  validate,
+  documentController.createDocument,
+);
+
+router.get(
+  '/:id',
+  documentIdParam,
+  validate,
+  documentController.getDocument,
+);
+
+router.patch(
+  '/:id',
+  updateDocumentRules,
+  validate,
+  documentController.updateDocument,
+);
+
 router.patch(
   '/:id/rename',
-  [...documentIdParam, body('title').trim().isLength({ min: 1, max: 200 }).withMessage('Title required')],
+  [
+    ...documentIdParam,
+    body('title')
+      .trim()
+      .isLength({ min: 1, max: 200 })
+      .withMessage('Title required'),
+  ],
   validate,
   documentController.renameDocument,
 );
-router.delete('/:id', documentIdParam, validate, documentController.deleteDocument);
 
-// Version history operations
-router.get('/:id/versions', documentIdParam, validate, documentController.getVersionHistory);
-router.post('/:id/versions/:versionId/restore', restoreVersionRules, validate, documentController.restoreVersion);
+router.delete(
+  '/:id',
+  documentIdParam,
+  validate,
+  documentController.deleteDocument,
+);
+
+// Version history
+
+router.get(
+  '/:id/versions',
+  documentIdParam,
+  validate,
+  documentController.getVersionHistory,
+);
+
+router.post(
+  '/:id/versions/:versionId/restore',
+  restoreVersionRules,
+  validate,
+  documentController.restoreVersion,
+);
 
 // Collaborator management
+
 router.post(
   '/:id/collaborators',
   [
     ...documentIdParam,
-    body('userId').trim().notEmpty().withMessage('User ID is required'),
-    body('email').isEmail().withMessage('Valid email is required'),
-    body('role').isIn(['editor', 'viewer']).withMessage('Role must be editor or viewer'),
+    body('email')
+      .trim()
+      .isEmail()
+      .withMessage('Valid email is required'),
+    body('role')
+      .isIn(['editor', 'viewer'])
+      .withMessage('Role must be editor or viewer'),
   ],
   validate,
   documentController.addCollaborator,

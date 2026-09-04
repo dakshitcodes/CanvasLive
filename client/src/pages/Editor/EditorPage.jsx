@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { ArrowLeft, History, Eye } from 'lucide-react';
+
 import { useEditor } from '../../hooks/useEditor.js';
 import { RichTextEditor } from '../../components/editor/RichTextEditor.jsx';
 import { CollaboratorsPanel } from '../../components/editor/CollaboratorsPanel.jsx';
@@ -8,6 +9,7 @@ import { VersionHistoryPanel } from '../../components/editor/VersionHistoryPanel
 import { SaveStatus } from '../../components/editor/SaveStatus.jsx';
 import { LoadingScreen } from '../../components/common/LoadingScreen.jsx';
 import { ThemeToggle } from '../../components/layout/ThemeToggle.jsx';
+
 import { ROLE_LABELS } from '../../constants/roles.js';
 import { canEdit } from '../../constants/roles.js';
 import { cn } from '../../utils/cn.js';
@@ -33,15 +35,24 @@ export default function EditorPage() {
   } = useEditor(documentId);
 
   useEffect(() => {
-    if (showHistory) loadVersions();
+    if (showHistory) {
+      loadVersions();
+    }
   }, [showHistory, loadVersions]);
 
-  if (loading) return <LoadingScreen message="Opening document..." />;
+  if (loading) {
+    return <LoadingScreen message="Opening document..." />;
+  }
+
   if (error) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-surface">
         <p className="text-red-600">{error}</p>
-        <Link to="/dashboard" className="text-brand-600 hover:underline">
+
+        <Link
+          to="/dashboard"
+          className="text-brand-600 hover:underline"
+        >
           Back to dashboard
         </Link>
       </div>
@@ -60,12 +71,15 @@ export default function EditorPage() {
           >
             <ArrowLeft className="h-5 w-5" />
           </button>
+
           <div className="min-w-0">
             <h1 className="truncate text-lg font-semibold text-[var(--text-primary)]">
               {document?.title}
             </h1>
+
             <div className="flex items-center gap-2">
               <SaveStatus status={saveStatus} />
+
               <span
                 className={cn(
                   'rounded-full px-2 py-0.5 text-[10px] font-medium uppercase',
@@ -76,7 +90,8 @@ export default function EditorPage() {
               >
                 {readOnly ? (
                   <span className="flex items-center gap-1">
-                    <Eye className="h-3 w-3" /> Viewer
+                    <Eye className="h-3 w-3" />
+                    Viewer
                   </span>
                 ) : (
                   ROLE_LABELS[document?.role] || 'Editor'
@@ -85,6 +100,7 @@ export default function EditorPage() {
             </div>
           </div>
         </div>
+
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowHistory(!showHistory)}
@@ -98,6 +114,7 @@ export default function EditorPage() {
             <History className="h-4 w-4" />
             History
           </button>
+
           <ThemeToggle />
         </div>
       </header>
@@ -109,6 +126,7 @@ export default function EditorPage() {
               You have view-only access. Editing is disabled.
             </div>
           )}
+
           <RichTextEditor
             content={document?.content}
             onChange={updateContent}
@@ -129,7 +147,12 @@ export default function EditorPage() {
             onClose={() => setShowHistory(false)}
           />
         ) : (
-          <CollaboratorsPanel collaborators={collaborators} typingUsers={typingUsers} />
+          <CollaboratorsPanel
+            documentId={documentId}
+            documentRole={document?.role}
+            collaborators={collaborators}
+            typingUsers={typingUsers}
+          />
         )}
       </div>
     </div>
